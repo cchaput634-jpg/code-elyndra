@@ -1,0 +1,13 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "preset-doc",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev"],
+      "cwd": "C:\\Users\\Valky\\Desktop\\RP Hogwarts\\Code Claude\\preset-doc",
+      "port": 5180,
+      "url": "http://127.0.0.1:5180"
+    }
+  ]
+}
