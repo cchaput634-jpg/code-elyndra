@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState, forwardRef } from 'react'
+import { useEffect, useMemo, useRef, useState, forwardRef } from 'react'
 import HTMLFlipBook from 'react-pageflip'
 import { AnimatePresence, motion } from 'motion/react'
 import { PREAMBULE, SECTIONS } from '../data/articles.js'
@@ -59,6 +59,21 @@ export default function BookView() {
   // Spreads are (0,1), (2,3), ... Final spread starts at totalPages-2.
   const atStart = pageIndex <= 0
   const atEnd = pageIndex >= totalPages - 2
+
+  // Reset the book to the first spread shortly after it closes, so the
+  // next opening always starts fresh. Delay matches the cover-close
+  // animation so the user never sees the pages flipping back.
+  useEffect(() => {
+    if (state !== 'closed') return
+    const t = setTimeout(() => {
+      const api = flipRef.current?.pageFlip?.()
+      if (api && typeof api.turnToPage === 'function') {
+        api.turnToPage(0)
+        setPageIndex(0)
+      }
+    }, 450)
+    return () => clearTimeout(t)
+  }, [state])
 
   const go = (dir) => {
     const api = flipRef.current?.pageFlip?.()
