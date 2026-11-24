@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from 'react'
 import { Rnd } from 'react-rnd'
 import { PAGE_W, PAGE_H, fontStackOf } from '../lib/constants.js'
 
@@ -61,6 +62,20 @@ export default function Canvas({
 function ElementView({ el, mode, selected, value, onSelect, onChange, onFill }) {
   const isZone = el.kind === 'zone'
   const isText = el.kind === 'text'
+  const [editing, setEditing] = useState(false)
+  const textRef = useRef(null)
+
+  useEffect(() => {
+    if (editing && textRef.current) {
+      textRef.current.focus()
+      textRef.current.select()
+    }
+  }, [editing])
+
+  // Exit edit mode when the element is deselected.
+  useEffect(() => {
+    if (!selected) setEditing(false)
+  }, [selected])
 
   const bodyStyle = {
     fontFamily: fontStackOf(el.font),
@@ -85,8 +100,33 @@ function ElementView({ el, mode, selected, value, onSelect, onChange, onFill }) 
       )
     }
     if (isText) {
+      if (editing) {
+        return (
+          <textarea
+            ref={textRef}
+            className="text-edit"
+            style={bodyStyle}
+            value={el.text}
+            onChange={(e) => onChange({ text: e.target.value })}
+            onBlur={() => setEditing(false)}
+            onKeyDown={(e) => {
+              if (e.key === 'Escape') {
+                setEditing(false)
+              }
+            }}
+            onMouseDown={(e) => e.stopPropagation()}
+          />
+        )
+      }
       return (
-        <div className="text-body" style={bodyStyle}>
+        <div
+          className="text-body"
+          style={bodyStyle}
+          onDoubleClick={(e) => {
+            e.stopPropagation()
+            if (mode === 'design') setEditing(true)
+          }}
+        >
           {el.text || ' '}
         </div>
       )
@@ -100,6 +140,7 @@ function ElementView({ el, mode, selected, value, onSelect, onChange, onFill }) 
   })()
 
   const disabled = mode === 'fill'
+  const dragLocked = disabled || editing
 
   return (
     <Rnd
@@ -108,13 +149,14 @@ function ElementView({ el, mode, selected, value, onSelect, onChange, onFill }) 
         selected ? 'is-selected' : '',
         isZone ? 'is-zone' : '',
         isText ? 'is-text' : '',
+        editing ? 'is-editing' : '',
         disabled ? 'is-disabled' : '',
       ].join(' ')}
       size={{ width: el.w, height: el.h }}
       position={{ x: el.x, y: el.y }}
       bounds="parent"
-      disableDragging={disabled}
-      enableResizing={!disabled}
+      disableDragging={dragLocked}
+      enableResizing={!dragLocked}
       onDragStop={(_, d) => onChange({ x: d.x, y: d.y })}
       onResizeStop={(_, __, ref, ___, pos) =>
         onChange({

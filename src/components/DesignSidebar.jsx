@@ -128,7 +128,7 @@ export default function DesignSidebar({
           <h3>Élément sélectionné</h3>
           {selected.kind === 'text' ? (
             <label className="field">
-              <span>Texte</span>
+              <span>Texte (ou double-clic sur le document)</span>
               <textarea
                 rows={3}
                 value={selected.text}
