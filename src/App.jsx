@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import BookView from './components/BookView.jsx'
 import SearchView from './components/SearchView.jsx'
+import PresetView from './preset/PresetView.jsx'
 
 export default function App() {
   const [tab, setTab] = useState('book')
@@ -25,11 +26,23 @@ export default function App() {
           >
             Recherche
           </button>
+          <button
+            className={tab === 'preset' ? 'tab active' : 'tab'}
+            onClick={() => setTab('preset')}
+          >
+            Documents
+          </button>
         </nav>
       </header>
 
       <main className="app-main">
-        {tab === 'book' ? <BookView /> : <SearchView />}
+        {tab === 'book' ? (
+          <BookView />
+        ) : tab === 'search' ? (
+          <SearchView />
+        ) : (
+          <PresetView />
+        )}
       </main>
     </div>
   )
