@@ -155,6 +155,12 @@ export default function PresetView() {
     })
   }
 
+  const addElement = (partial) => {
+    const el = { id: uid(), ...partial }
+    setDoc({ ...doc, elements: [...doc.elements, el] })
+    setSelectedId(el.id)
+  }
+
   return (
     <div className="preset-root">
       <div className="preset-subnav">
@@ -192,6 +198,7 @@ export default function PresetView() {
               onSelect={setSelectedId}
               onChange={patchElement}
               onFillChange={(id, v) => setValues({ ...values, [id]: v })}
+              onAddElement={addElement}
               canvasRef={canvasRef}
             />
           </div>

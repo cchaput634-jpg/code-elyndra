@@ -512,6 +512,78 @@
   background: #fff;
 }
 
+.preset-root .asset-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+
+.preset-root .asset-thumb {
+  position: relative;
+  aspect-ratio: 1 / 1;
+  background:
+    repeating-conic-gradient(#eee 0 25%, #ccc 0 50%) 50% / 12px 12px,
+    #fff;
+  border: 1px solid var(--p-panel-br);
+  border-radius: 3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  cursor: grab;
+  padding: 4px;
+}
+
+.preset-root .asset-thumb:active { cursor: grabbing; }
+
+.preset-root .asset-thumb img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  pointer-events: none;
+}
+
+.preset-root .asset-name {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(10, 10, 18, 0.75);
+  color: var(--p-accent-soft);
+  font-size: 10px;
+  letter-spacing: 0.05em;
+  padding: 2px 4px;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.preset-root .asset-delete {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(192, 80, 80, 0.85);
+  color: #fff;
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+  padding: 0;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.preset-root .asset-thumb:hover .asset-delete { opacity: 1; }
+
+.preset-root .canvas-page.drop-target {
+  outline: 3px dashed var(--p-accent);
+  outline-offset: -3px;
+}
+
 @media (max-width: 760px) {
   .preset-root .editor { grid-template-columns: 1fr; }
 }

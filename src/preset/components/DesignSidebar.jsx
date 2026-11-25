@@ -1,5 +1,11 @@
+import { useState } from 'react'
 import { BG_PRESETS, FONTS } from '../lib/constants.js'
 import { uid } from '../lib/presets.js'
+import {
+  addUserAsset,
+  deleteUserAsset,
+  listAssets,
+} from '../lib/assets.js'
 
 export default function DesignSidebar({
   doc,
@@ -10,6 +16,8 @@ export default function DesignSidebar({
   onExportPreset,
 }) {
   const selected = doc.elements.find((e) => e.id === selectedId) || null
+  const [assets, setAssets] = useState(() => listAssets())
+  const refresh = () => setAssets(listAssets())
 
   const onBgFile = (e) => {
     const f = e.target.files?.[0]
@@ -58,41 +66,6 @@ export default function DesignSidebar({
     setSelectedId(el.id)
   }
 
-  const addImageFromFile = (file) => {
-    if (!file) return
-    const reader = new FileReader()
-    reader.onload = () => {
-      const src = String(reader.result)
-      const img = new Image()
-      img.onload = () => {
-        const maxW = 400
-        const ratio = img.height / img.width
-        const w = Math.min(img.width, maxW)
-        const h = w * ratio
-        const el = {
-          id: uid(),
-          kind: 'image',
-          src,
-          x: 200,
-          y: 400,
-          w,
-          h,
-          opacity: 1,
-          fit: 'contain',
-        }
-        setDoc({ ...doc, elements: [...doc.elements, el] })
-        setSelectedId(el.id)
-      }
-      img.src = src
-    }
-    reader.readAsDataURL(file)
-  }
-
-  const onImageFile = (e) => {
-    addImageFromFile(e.target.files?.[0])
-    e.target.value = ''
-  }
-
   const onReplaceImageFile = (e) => {
     const f = e.target.files?.[0]
     if (!f) return
@@ -102,19 +75,23 @@ export default function DesignSidebar({
     e.target.value = ''
   }
 
-  const addImageZone = () => {
-    const el = {
-      id: uid(),
-      kind: 'image-zone',
-      label: 'Signature',
-      x: 150,
-      y: 500,
-      w: 300,
-      h: 120,
-      fit: 'contain',
+  const onAddAssetFile = (e) => {
+    const f = e.target.files?.[0]
+    if (!f) return
+    const reader = new FileReader()
+    reader.onload = () => {
+      const name = f.name.replace(/\.[^.]+$/, '')
+      addUserAsset({ name, src: String(reader.result) })
+      refresh()
     }
-    setDoc({ ...doc, elements: [...doc.elements, el] })
-    setSelectedId(el.id)
+    reader.readAsDataURL(f)
+    e.target.value = ''
+  }
+
+  const removeAsset = (id) => {
+    if (!confirm('Retirer cet asset de votre bibliothèque ?')) return
+    deleteUserAsset(id)
+    refresh()
   }
 
   const patchSelected = (patch) => {
@@ -171,22 +148,57 @@ export default function DesignSidebar({
       </section>
 
       <section className="side-block">
-        <h3>Ajouter</h3>
+        <h3>Ajouter du texte</h3>
         <div className="row wrap">
           <button type="button" className="btn" onClick={addText}>
-            + Texte
+            + Texte fixe
           </button>
           <button type="button" className="btn" onClick={addZone}>
-            + Zone texte
-          </button>
-          <label className="btn file-inline">
-            <input type="file" accept="image/*" onChange={onImageFile} hidden />
-            + Image
-          </label>
-          <button type="button" className="btn" onClick={addImageZone}>
-            + Zone image
+            + Zone à remplir
           </button>
         </div>
+      </section>
+
+      <section className="side-block">
+        <h3>Assets (glisser-déposer)</h3>
+        <p className="subtle">
+          Faites glisser une vignette sur le document pour la placer.
+        </p>
+        <div className="asset-grid">
+          {assets.map((a) => (
+            <div
+              key={a.id}
+              className="asset-thumb"
+              draggable
+              onDragStart={(e) => {
+                e.dataTransfer.effectAllowed = 'copy'
+                e.dataTransfer.setData(
+                  'application/x-preset-asset',
+                  JSON.stringify({ src: a.src, name: a.name }),
+                )
+                e.dataTransfer.setData('text/plain', a.src)
+              }}
+              title={a.name}
+            >
+              <img src={a.src} alt={a.name} draggable={false} />
+              <span className="asset-name">{a.name}</span>
+              {!a.builtin ? (
+                <button
+                  type="button"
+                  className="asset-delete"
+                  onClick={() => removeAsset(a.id)}
+                  aria-label="Retirer"
+                >
+                  ×
+                </button>
+              ) : null}
+            </div>
+          ))}
+        </div>
+        <label className="file-btn">
+          <input type="file" accept="image/*" onChange={onAddAssetFile} hidden />
+          <span>+ Importer un asset dans la bibliothèque</span>
+        </label>
       </section>
 
       {selected ? (

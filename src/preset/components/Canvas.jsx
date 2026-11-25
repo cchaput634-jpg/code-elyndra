@@ -10,6 +10,7 @@ export default function Canvas({
   onSelect,
   onChange,
   onFillChange,
+  onAddElement,
   canvasRef,
   scale = 0.65,
 }) {
@@ -18,6 +19,75 @@ export default function Canvas({
   const stageStyle = {
     width: PAGE_W * scale,
     height: PAGE_H * scale,
+  }
+
+  const handleDragOver = (e) => {
+    if (mode !== 'design') return
+    const types = e.dataTransfer.types
+    if (
+      types.includes('application/x-preset-asset') ||
+      types.includes('Files') ||
+      types.includes('text/plain')
+    ) {
+      e.preventDefault()
+      e.dataTransfer.dropEffect = 'copy'
+    }
+  }
+
+  const placeAssetFromSrc = (src, name, dropX, dropY) => {
+    const img = new Image()
+    img.onload = () => {
+      const maxW = 400
+      const ratio = img.height / img.width
+      const w = Math.min(img.width, maxW)
+      const h = w * ratio
+      onAddElement?.({
+        kind: 'image',
+        name: name || 'Image',
+        src,
+        x: Math.max(0, Math.min(PAGE_W - w, dropX - w / 2)),
+        y: Math.max(0, Math.min(PAGE_H - h, dropY - h / 2)),
+        w,
+        h,
+        opacity: 1,
+        fit: 'contain',
+      })
+    }
+    img.src = src
+  }
+
+  const handleDrop = (e) => {
+    if (mode !== 'design') return
+    e.preventDefault()
+    const rect = e.currentTarget.getBoundingClientRect()
+    // Canvas is scaled; convert client coords to canvas coords.
+    const dropX = (e.clientX - rect.left) / scale
+    const dropY = (e.clientY - rect.top) / scale
+
+    const payload = e.dataTransfer.getData('application/x-preset-asset')
+    if (payload) {
+      try {
+        const { src, name } = JSON.parse(payload)
+        placeAssetFromSrc(src, name, dropX, dropY)
+        return
+      } catch {
+        /* fall through */
+      }
+    }
+    const files = Array.from(e.dataTransfer.files || []).filter((f) =>
+      f.type.startsWith('image/'),
+    )
+    if (files.length > 0) {
+      const f = files[0]
+      const reader = new FileReader()
+      reader.onload = () => placeAssetFromSrc(String(reader.result), f.name, dropX, dropY)
+      reader.readAsDataURL(f)
+      return
+    }
+    const textSrc = e.dataTransfer.getData('text/plain')
+    if (textSrc && (textSrc.startsWith('http') || textSrc.startsWith('data:'))) {
+      placeAssetFromSrc(textSrc, 'Image', dropX, dropY)
+    }
   }
 
   return (
@@ -30,6 +100,8 @@ export default function Canvas({
           height: PAGE_H,
           transform: `scale(${scale})`,
         }}
+        onDragOver={handleDragOver}
+        onDrop={handleDrop}
         onMouseDown={(e) => {
           if (e.target === e.currentTarget && mode === 'design') onSelect(null)
         }}
